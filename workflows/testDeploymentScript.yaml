@@ -1,0 +1,30 @@
+name: Run Hardhat Tests
+
+on:
+  push:
+    branches: [ master, v1-audited ]
+  pull_request:
+    branches: [ master, v1-audited ]
+jobs:
+  test:
+    name: Run hardhat deploy tests on Ubuntu with Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [ 16 ]
+    env:
+      OP_PRIVATE_KEY: ${{ secrets.OP_PRIVATE_KEY }}
+      FTM_PRIVATE_KEY: ${{ secrets.FTM_PRIVATE_KEY }}
+      INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
+      ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Install
+        run: npm install
+      - name: Compile
+        run: npm run typechain
+      - name: Run tests
+        run: npm run testDeployOP
