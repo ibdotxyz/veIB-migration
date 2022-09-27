@@ -31,8 +31,17 @@ describe("veMigration test", function () {
 
     // op setup
     const opIBToken = ERC20Factory.attach("0x00a35FD824c717879BF370E70AC6868b95870Dfb");
+    const anyswapMPC = await impersonateAccount("0x647dc1366da28f8a64eb831fc8e9f05c90d1ea5a");
+    const anyswapRouter = await ethers.getContractAt("AnyswapV6Router", "0x80A16016cC4A2E6a2CACA8a4a498b1699fF0f844");
     const opve = await veFactory.deploy(opIBToken.address, opIBToken.address);
+
     opMigration = await veMigrationFactory.deploy(opIBToken.address, anyCallAddress, opve.address, ethers.constants.AddressZero, destChainId, []);
+
+    // add minter access to migration contract
+    await anyswapRouter.connect(anyswapMPC).setMinter(opIBToken.address, opMigration.address);
+    await ethers.provider.send("evm_increaseTime", [172800]);
+    await ethers.provider.send("evm_mine", []);
+    await anyswapRouter.connect(anyswapMPC).applyMinter(opIBToken.address);
 
     // ftm setup
     const ftmIBToken = ERC20Factory.attach("0x00a35FD824c717879BF370E70AC6868b95870Dfb");
@@ -52,14 +61,13 @@ describe("veMigration test", function () {
         .withArgs(userAddress, [tokenId]);
       expect(await ftmve.ownerOf(tokenId)).to.eq(await ftmMigration.nullAddress());
     });
-    it.only("can execute migrate", async function () {
+    it("can execute migrate", async function () {
       const tokenId = 500;
       const userAddress = "0xF61c82256584B73219bc5E81D0Dd87Aee08009b3";
-      const executeMigrationCallData = opMigration.interface.encodeFunctionData('executeMigration', [userAddress,[tokenId], [[ethers.utils.parseUnits("1","wei"), 60 * 60 * 24 * 7]]]);
-      console.log("test\n", executeMigrationCallData);
-      const callDataWithFunction = opMigration.interface.encodeFunctionData("anyExecute", [executeMigrationCallData]);
-      console.log("testwith calldata\n", callDataWithFunction);
-      await opMigration.anyExecute(callDataWithFunction, { gasLimit: 1000000 });
+      const network = await ethers.getDefaultProvider().getNetwork();
+      await opMigration.setMigrationSource(ownerAddress, network.chainId);
+      const calldata = ethers.utils.defaultAbiCoder.encode(["address", "uint256[]", "tuple(uint256,uint256)[]"], [userAddress, [tokenId], [[ethers.utils.parseUnits("1", "wei"), 60 * 60 * 24 * 7]]]);
+      await opMigration.anyExecute(calldata, { gasLimit: 1000000 });
     });
   });
 });
