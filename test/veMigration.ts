@@ -55,9 +55,10 @@ describe("veMigration test", function () {
     it.only("can execute migrate", async function () {
       const tokenId = 500;
       const userAddress = "0xF61c82256584B73219bc5E81D0Dd87Aee08009b3";
-      const calldata = ethers.utils.defaultAbiCoder.encode(["uint256[]", "tuple(uint256,uint256)[]", "address"], [[tokenId], [[ethers.utils.parseEther("1"), 60 * 60 * 24 * 7]], userAddress]);
-      console.log(calldata);
-      const callDataWithFunction = opMigration.interface.encodeFunctionData("anyExecute", [calldata]);
+      const executeMigrationCallData = opMigration.interface.encodeFunctionData('executeMigration', [userAddress,[tokenId], [[ethers.utils.parseUnits("1","wei"), 60 * 60 * 24 * 7]]]);
+      console.log("test\n", executeMigrationCallData);
+      const callDataWithFunction = opMigration.interface.encodeFunctionData("anyExecute", [executeMigrationCallData]);
+      console.log("testwith calldata\n", callDataWithFunction);
       await opMigration.anyExecute(callDataWithFunction, { gasLimit: 1000000 });
     });
   });

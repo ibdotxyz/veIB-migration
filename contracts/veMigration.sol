@@ -1,23 +1,37 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 import "./interfaces/IVotingEscrow.sol";
 import "./interfaces/IFeeDistributor.sol";
 import "./interfaces/IAnyCall.sol";
 import "./interfaces/IERC20.sol";
-import "hardhat/console.sol";
+
+interface IExecutor {
+    function context()
+        external
+        returns (
+            address from,
+            uint256 fromChainID,
+            uint256 nonce
+        );
+}
 
 struct MigrationLock {
     uint256 amount;
     uint256 duration;
 }
 
-contract veMigration {
+contract veMigration is Ownable {
     address public immutable ibToken;
     address public immutable anycallExecutor;
     address public immutable anyCall;
     address public immutable veIB;
     address public immutable receiver;
     uint256 public immutable destChainId;
+
+    address public migrationSource;
+    uint256 public sourceChain;
 
     address[] public feeDistributors;
 
@@ -80,6 +94,11 @@ contract veMigration {
         destChainId = _destChainId;
     }
 
+    function setMigrationSource(address _migrationSource, uint256 _sourceChain) external onlyOwner {
+        migrationSource = _migrationSource;
+        sourceChain = _sourceChain;
+    }
+
     /// @notice function to initiate migration on source chain, it help users claim rewards from fee_distibutors
     ///         and then burn the veIB NFTs before initiating the anyCall to destination chain
     /// @param tokenIds array of tokenIds to migrate
@@ -111,6 +130,9 @@ contract veMigration {
     /// @return success true if migration is successful
     /// @return result return message
     function anyExecute(bytes calldata data) external onlyExecutor returns (bool success, bytes memory result) {
+        (address callFrom, uint256 fromChainID, ) = IExecutor(anycallExecutor).context();
+        require(callFrom == migrationSource, "Only veMigrationSource can initiate the anyCall");
+        require(fromChainID == sourceChain, "Incorrect source chain ID");
         bytes4 selector = bytes4(data[:4]);
         if (selector == this.anyExecute.selector) {
             // execute migration flow on destination chain
@@ -129,7 +151,7 @@ contract veMigration {
     /// @param _initialCallTo initial call to address on the destination chain
     /// @param _initialCallData initial calldata sent to the destination chain
     function anyFallback(address _initialCallTo, bytes calldata _initialCallData) external onlySelf {
-        _initialCallTo;
+        require(_initialCallTo == receiver, "Incorrect receiver address");
         (uint256[] memory oldTokenIds, , address user) = abi.decode(_initialCallData, (uint256[], IVotingEscrow.LockedBalance[], address));
         emit MigrationFailed(user, oldTokenIds);
     }
@@ -137,7 +159,6 @@ contract veMigration {
     /// @notice function to execute migration on destination chain
     /// @param data encoded data of tokenIds, lockBalances and user address
     function executeMigration(bytes calldata data) internal {
-        console.logBytes(data);
         (uint256[] memory oldTokenIds, MigrationLock[] memory migrationLocks, address user) = abi.decode(data, (uint256[], MigrationLock[], address));
         uint256[] memory newTokenIds = new uint256[](oldTokenIds.length);
         for (uint256 i = 0; i < migrationLocks.length; i++) {
