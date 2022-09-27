@@ -11,11 +11,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const receiver = ethers.constants.AddressZero;
   const destChainId = 0;
   const feeDistributors = [];
-  let migration = await deploy("veIBMigration", {
+  let migration = await deploy("veMigration", {
     from: deployer,
     args: [ibToken, anyCall, veIB, receiver, destChainId, feeDistributors],
     log: true,
-    contract: "veIBMigration",
+    contract: "veMigration",
   });
 };
 export default func;

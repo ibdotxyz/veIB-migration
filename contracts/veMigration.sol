@@ -5,7 +5,12 @@ import "./interfaces/IFeeDistributor.sol";
 import "./interfaces/IAnyCall.sol";
 import "./interfaces/IERC20.sol";
 
-contract veIBMigration {
+struct MigrationLock {
+    uint256 amount;
+    uint256 duration;
+}
+
+contract veMigration {
     address public immutable ibToken;
     address public immutable anycallExecutor;
     address public immutable anyCall;
@@ -17,6 +22,7 @@ contract veIBMigration {
 
     uint256 public constant PAY_FEE_ON_DEST_CHAIN = 0; // PAID_ON_DEST = 0; PAID_ON_SRC = 2;
     address public constant nullAddress = 0x000000000000000000000000000000000000dEaD;
+    uint256 internal constant WEEK = 1 weeks;
 
     /// @notice emitted when migration is initiated on source chain
     /// @param user user address
@@ -81,14 +87,16 @@ contract veIBMigration {
         for (uint256 i = 0; i < feeDistributors.length; i++) {
             IFeeDistributor(feeDistributors[i]).claim_many(tokenIds);
         }
-        IVotingEscrow.LockedBalance[] memory lockBalances = new IVotingEscrow.LockedBalance[](tokenIds.length);
+        MigrationLock[] memory migrationLocks = new MigrationLock[](tokenIds.length);
         for (uint256 i = 0; i < tokenIds.length; i++) {
             require(IVotingEscrow(veIB).ownerOf(tokenIds[i]) == msg.sender, "You are not the owner of this token");
-            IVotingEscrow(veIB).transferFrom(msg.sender, nullAddress, tokenIds[i]);
             IVotingEscrow.LockedBalance memory lockBalance = IVotingEscrow(veIB).locked(tokenIds[i]);
-            lockBalances[i] = lockBalance;
+            uint256 remainingDuration = lockBalance.end - block.timestamp;
+            require(remainingDuration >= WEEK, "Lock duration is less than minimum lock duration");
+            migrationLocks[i] = MigrationLock(uint256(uint128(lockBalance.amount)), remainingDuration);
+            IVotingEscrow(veIB).transferFrom(msg.sender, nullAddress, tokenIds[i]);
         }
-        bytes memory data = abi.encodeWithSelector(this.anyExecute.selector, abi.encode(tokenIds, lockBalances, msg.sender));
+        bytes memory data = abi.encodeWithSelector(this.anyExecute.selector, abi.encode(tokenIds, migrationLocks, msg.sender));
         // set fallBack address as the current address to log failures, if any
         IAnyCall(anyCall).anyCall(receiver, data, address(this), destChainId, PAY_FEE_ON_DEST_CHAIN);
         emit MigrationInitiated(msg.sender, tokenIds);
@@ -128,15 +136,13 @@ contract veIBMigration {
     /// @notice function to execute migration on destination chain
     /// @param data encoded data of tokenIds, lockBalances and user address
     function executeMigration(bytes calldata data) internal {
-        (uint256[] memory oldTokenIds, IVotingEscrow.LockedBalance[] memory lockBalances, address user) = abi.decode(data[4:], (uint256[], IVotingEscrow.LockedBalance[], address));
+        (uint256[] memory oldTokenIds, MigrationLock[] memory migrationLocks, address user) = abi.decode(data[4:], (uint256[], MigrationLock[], address));
         uint256[] memory newTokenIds = new uint256[](oldTokenIds.length);
-        for (uint256 i = 0; i < lockBalances.length; i++) {
-            uint256 amount = uint256(uint128(lockBalances[i].amount));
+        for (uint256 i = 0; i < migrationLocks.length; i++) {
+            uint256 amount = migrationLocks[i].amount;
             IERC20(ibToken).mint(address(this), amount);
-            // cast int128 to uint256?
             IERC20(ibToken).approve(veIB, amount);
-            uint256 duration = lockBalances[i].end < block.timestamp + 1 weeks ? 1 weeks : lockBalances[i].end - block.timestamp;
-            uint256 tokenId = IVotingEscrow(veIB).create_lock_for(amount, duration, user);
+            uint256 tokenId = IVotingEscrow(veIB).create_lock_for(amount, migrationLocks[i].duration, user);
             newTokenIds[i] = tokenId;
         }
         emit MigrationCompleted(user, oldTokenIds, newTokenIds);

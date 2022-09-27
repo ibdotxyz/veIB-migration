@@ -274,7 +274,7 @@ interface ITokenDescriptor {
     ) external view returns (string memory);
 }
 
-contract ve is IERC721, IERC721Metadata {
+contract MockVE is IERC721, IERC721Metadata {
     enum DepositType {
         DEPOSIT_FOR_TYPE,
         CREATE_LOCK_TYPE,

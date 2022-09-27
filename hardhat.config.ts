@@ -28,7 +28,6 @@ const hardhatNetworkConfig =
           url: forkingUrl,
         },
       };
-
 const config: HardhatUserConfig = {
   namedAccounts: {
     deployer: {
