@@ -4,6 +4,7 @@ import "./interfaces/IVotingEscrow.sol";
 import "./interfaces/IFeeDistributor.sol";
 import "./interfaces/IAnyCall.sol";
 import "./interfaces/IERC20.sol";
+import "hardhat/console.sol";
 
 struct MigrationLock {
     uint256 amount;
@@ -88,12 +89,12 @@ contract veMigration {
             IFeeDistributor(feeDistributors[i]).claim_many(tokenIds);
         }
         MigrationLock[] memory migrationLocks = new MigrationLock[](tokenIds.length);
+        uint256 oneWeekFromNow = block.timestamp + WEEK;
         for (uint256 i = 0; i < tokenIds.length; i++) {
             require(IVotingEscrow(veIB).ownerOf(tokenIds[i]) == msg.sender, "You are not the owner of this token");
             IVotingEscrow.LockedBalance memory lockBalance = IVotingEscrow(veIB).locked(tokenIds[i]);
-            uint256 remainingDuration = lockBalance.end - block.timestamp;
-            require(remainingDuration >= WEEK, "Lock duration is less than minimum lock duration");
-            migrationLocks[i] = MigrationLock(uint256(uint128(lockBalance.amount)), remainingDuration);
+            uint256 duration = lockBalance.end >= oneWeekFromNow ? lockBalance.end - block.timestamp : WEEK;
+            migrationLocks[i] = MigrationLock(uint256(uint128(lockBalance.amount)), duration);
             IVotingEscrow(veIB).transferFrom(msg.sender, nullAddress, tokenIds[i]);
         }
         bytes memory data = abi.encodeWithSelector(this.anyExecute.selector, abi.encode(tokenIds, migrationLocks, msg.sender));
@@ -136,7 +137,8 @@ contract veMigration {
     /// @notice function to execute migration on destination chain
     /// @param data encoded data of tokenIds, lockBalances and user address
     function executeMigration(bytes calldata data) internal {
-        (uint256[] memory oldTokenIds, MigrationLock[] memory migrationLocks, address user) = abi.decode(data[4:], (uint256[], MigrationLock[], address));
+        console.logBytes(data);
+        (uint256[] memory oldTokenIds, MigrationLock[] memory migrationLocks, address user) = abi.decode(data, (uint256[], MigrationLock[], address));
         uint256[] memory newTokenIds = new uint256[](oldTokenIds.length);
         for (uint256 i = 0; i < migrationLocks.length; i++) {
             uint256 amount = migrationLocks[i].amount;
