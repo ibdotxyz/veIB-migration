@@ -27,7 +27,8 @@ describe("veMigration test", function () {
     const anycallFactory = await ethers.getContractFactory("MockAnyCall");
     const anyCall = await anycallFactory.deploy(ownerAddress);
     const anyCallAddress = anyCall.address;
-    let destChainId = 0; // null
+    let destChainId = 10; // null
+    let sourceChainId = 250;
 
     // op setup
     const opIBToken = ERC20Factory.attach("0x00a35FD824c717879BF370E70AC6868b95870Dfb");
@@ -35,7 +36,7 @@ describe("veMigration test", function () {
     const anyswapRouter = await ethers.getContractAt("AnyswapV6Router", "0x80A16016cC4A2E6a2CACA8a4a498b1699fF0f844");
     const opve = await veFactory.deploy(opIBToken.address, opIBToken.address);
 
-    opMigration = await veMigrationFactory.deploy(opIBToken.address, anyCallAddress, opve.address, ethers.constants.AddressZero, destChainId, []);
+    opMigration = await veMigrationFactory.deploy(opIBToken.address, anyCallAddress, opve.address, sourceChainId, destChainId, []);
 
     // add minter access to migration contract
     await anyswapRouter.connect(anyswapMPC).setMinter(opIBToken.address, opMigration.address);
@@ -48,10 +49,13 @@ describe("veMigration test", function () {
     ftmve = veFactory.attach("0xBe33aD085e4a5559e964FA8790ceB83905062065");
     const feeDistributors = ["0x31A1D83C715F4bd6fE7A26f1Ce279Cec15011AE9", "0xB634c662296a4BA117A422bFE6742B75989Bd714", "0x3Af7c11d112C1C730E5ceE339Ca5B48F9309aCbC"];
     destChainId = 10; // optimism
-    ftmMigration = await veMigrationFactory.deploy(ftmIBToken.address, anyCallAddress, ftmve.address, opMigration.address, destChainId, feeDistributors);
+    ftmMigration = await veMigrationFactory.deploy(ftmIBToken.address, anyCallAddress, ftmve.address, sourceChainId, destChainId, feeDistributors);
+
+    await ftmMigration.setup(ftmMigration.address, opMigration.address);
+    await opMigration.setup(ftmMigration.address, opMigration.address);
   });
   describe("test veMigration", async function () {
-    it("can initiate migrate", async function () {
+    it.skip("can initiate migrate", async function () {
       const tokenId = 500;
       const userAddress = "0xF61c82256584B73219bc5E81D0Dd87Aee08009b3";
       const user = await impersonateAccount(userAddress);
@@ -65,9 +69,10 @@ describe("veMigration test", function () {
       const tokenId = 500;
       const userAddress = "0xF61c82256584B73219bc5E81D0Dd87Aee08009b3";
       const network = await ethers.getDefaultProvider().getNetwork();
-      await opMigration.setMigrationSource(ownerAddress, network.chainId);
       const calldata = ethers.utils.defaultAbiCoder.encode(["address", "uint256[]", "tuple(uint256,uint256)[]"], [userAddress, [tokenId], [[ethers.utils.parseUnits("1", "wei"), 60 * 60 * 24 * 7]]]);
-      await opMigration.anyExecute(calldata, { gasLimit: 1000000 });
+      await expect(opMigration.anyExecute(calldata, { gasLimit: 1000000 }))
+        .to.emit(opMigration, "MigrationCompleted")
+        .withArgs(userAddress, [tokenId], [0]);
     });
   });
 });
