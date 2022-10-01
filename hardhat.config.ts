@@ -51,11 +51,19 @@ const config: HardhatUserConfig = {
     hardhat: hardhatNetworkConfig,
     optimism: {
       url: `https://optimism-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: [`${process.env.OP_PRIVATE_KEY}`],
+      accounts: [`${process.env.DEPLOYER_PRIVATE_KEY}`],
+    },
+    ftmTest: {
+      url: `https://rpc.testnet.fantom.network/`,
+      accounts: [`${process.env.DEPLOYER_PRIVATE_KEY}`],
     },
     fantom: {
       url: `https://fantom.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: [`${process.env.FTM_PRIVATE_KEY}`],
+      accounts: [`${process.env.DEPLOYER_PRIVATE_KEY}`],
+    },
+    rinkeby: {
+      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
+      accounts: [`${process.env.DEPLOYER_PRIVATE_KEY}`],
     },
   },
   gasReporter: {
