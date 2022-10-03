@@ -4,10 +4,7 @@ import { ethers } from "hardhat";
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
-  const ibToken = "0x00a35FD824c717879BF370E70AC6868b95870Dfb";
-  const anyCall = "0xC10Ef9F491C9B59f936957026020C321651ac078";
-  const veIB = "0xBe33aD085e4a5559e964FA8790ceB83905062065";
+  const { deployer, ibToken, veIB, anyCall } = await getNamedAccounts();
 
   // TODO: fill in deployed contract address on op
   const srcChainId = 250;

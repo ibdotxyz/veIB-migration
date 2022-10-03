@@ -33,6 +33,12 @@ const config: HardhatUserConfig = {
     deployer: {
       default: 0, // here this will by default take the first account as deployer
     },
+    ibToken: "0x00a35FD824c717879BF370E70AC6868b95870Dfb",
+    veIB: {
+      fantom: "0xBe33aD085e4a5559e964FA8790ceB83905062065",
+      optimism: "",
+    },
+    anyCall: "0xC10Ef9F491C9B59f936957026020C321651ac078",
   },
   solidity: {
     compilers: [
@@ -51,19 +57,19 @@ const config: HardhatUserConfig = {
     hardhat: hardhatNetworkConfig,
     optimism: {
       url: `https://optimism-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: process.env.DEPLOYER_PRIVATE_KEY == undefined ? []: [`${process.env.DEPLOYER_PRIVATE_KEY}`],
+      accounts: process.env.DEPLOYER_PRIVATE_KEY == undefined ? [] : [`${process.env.DEPLOYER_PRIVATE_KEY}`],
     },
     ftmTest: {
       url: `https://rpc.testnet.fantom.network/`,
-      accounts: process.env.DEPLOYER_PRIVATE_KEY == undefined ? []: [`${process.env.DEPLOYER_PRIVATE_KEY}`],
+      accounts: process.env.DEPLOYER_PRIVATE_KEY == undefined ? [] : [`${process.env.DEPLOYER_PRIVATE_KEY}`],
     },
     fantom: {
       url: `https://fantom.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: process.env.DEPLOYER_PRIVATE_KEY == undefined ? []: [`${process.env.DEPLOYER_PRIVATE_KEY}`],
+      accounts: process.env.DEPLOYER_PRIVATE_KEY == undefined ? [] : [`${process.env.DEPLOYER_PRIVATE_KEY}`],
     },
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: process.env.DEPLOYER_PRIVATE_KEY == undefined ? []: [`${process.env.DEPLOYER_PRIVATE_KEY}`],
+      accounts: process.env.DEPLOYER_PRIVATE_KEY == undefined ? [] : [`${process.env.DEPLOYER_PRIVATE_KEY}`],
     },
   },
   gasReporter: {

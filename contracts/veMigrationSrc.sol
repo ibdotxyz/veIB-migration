@@ -124,7 +124,7 @@ contract veMigrationSrc is Ownable {
         emit MigrationFailed(user, oldTokenIds);
     }
 
-    function tokenIds(address user) external view returns (uint256[] memory) {
+    function getTokenIds(address user) external view returns (uint256[] memory) {
         uint256 balance = IERC721Enumerable(veIB).balanceOf(user);
         uint256[] memory ids = new uint256[](balance);
         for (uint256 i = 0; i < balance; i++) {

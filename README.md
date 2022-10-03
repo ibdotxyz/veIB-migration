@@ -25,7 +25,7 @@ npm run coverage
 ```
 
 ## Deployment
-1. In ```000_deploy_dest_chain.ts```, fill in the ```veIB``` address
+1. In ```hardhat.config.ts```, fill in the ```veIB``` address for OP
 2. Execute:
     ```bash
     npx hardhat deploy --tags deploy-dest --network optimism
