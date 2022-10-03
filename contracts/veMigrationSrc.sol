@@ -15,7 +15,6 @@ struct MigrationLock {
 }
 
 contract veMigrationSrc is Ownable {
-    address public immutable ibToken;
     address public immutable anycallExecutor;
     address public immutable anyCall;
     address public immutable veIB;
@@ -50,12 +49,10 @@ contract veMigrationSrc is Ownable {
     }
 
     /// @notice Contract constructor, can be deployed on both the source chain and the destination chainz
-    /// @param _ibToken ibToken address
     /// @param _anyCall anyCall address
     /// @param _veIB veIB address
     /// @param _feeDistributors feeDistributors address, only needed when deployed on source chain, set to [] when deployed on destination chain
     constructor(
-        address _ibToken,
         address _anyCall,
         address _veIB,
         address _receiver,
@@ -63,12 +60,10 @@ contract veMigrationSrc is Ownable {
         uint256 _destChainId,
         address[] memory _feeDistributors
     ) {
-        require(_ibToken != address(0), "ibToken address cannot be 0");
         require(_anyCall != address(0), "anyCall address cannot be 0");
         require(_veIB != address(0), "veIB address cannot be 0");
         require(_receiver != address(0), "receiver address cannot be 0");
 
-        ibToken = _ibToken;
         anyCall = _anyCall;
         anycallExecutor = IAnyCall(_anyCall).executor();
         veIB = _veIB;
@@ -106,9 +101,11 @@ contract veMigrationSrc is Ownable {
     /// @return result return message
     function anyExecute(bytes calldata data) external onlyExecutor returns (bool success, bytes memory result) {
         (address callFrom, uint256 fromChainID, ) = IExecutor(anycallExecutor).context();
-        require(callFrom == address(this) && fromChainID == srcChainId, "anyExecute can only be called for the purpose of logging failure with anyFallback");
-        require(bytes4(data[:4]) == this.anyFallback.selector, "for logging with anyFallback, first 4 bytes have to be the function selector of anyFallback");
-
+        bool isValidSource = callFrom == address(this) && fromChainID == srcChainId;
+        bool isValidFunctionSig = bytes4(data[:4]) == this.anyFallback.selector;
+        if (!isValidSource || !isValidFunctionSig) {
+            return (false, "invalid souce or function selector");
+        }
         // when migration fails on destination chain, log failure on source chain
         (address _initialCallTo, bytes memory _initialCallData) = abi.decode(data[4:], (address, bytes));
         this.anyFallback(_initialCallTo, _initialCallData);

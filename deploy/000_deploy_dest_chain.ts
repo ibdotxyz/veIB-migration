@@ -5,8 +5,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
   const { deployer, ibToken, veIB, anyCall } = await getNamedAccounts();
-  const srcChainId = 250; // ftm 250 ftm testNet 4002
-  const destChainId = 10; // optimism 10, rinkeby 4
+  const srcChainId = 4; // ftm 250 ftm testNet 4002
+  const destChainId = 4002; // optimism 10, rinkeby 4
+  // const srcChainId = 250; // ftm 250 ftm testNet 4002
+  // const destChainId = 10; // optimism 10, rinkeby 4
 
   let migration = await deploy("veMigrationDest", {
     from: deployer,

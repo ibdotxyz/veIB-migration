@@ -4,7 +4,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./interfaces/IVotingEscrow.sol";
-import "./interfaces/IFeeDistributor.sol";
 import "./interfaces/IAnyCall.sol";
 import "./interfaces/IExecutor.sol";
 import "./interfaces/IERC20.sol";
@@ -23,8 +22,6 @@ contract veMigrationDest is Ownable, ReentrancyGuard {
 
     address public sender;
 
-    uint256 public constant WEEK = 1 weeks;
-
     /// @notice emitted when migration is successful on destination chain
     /// @param user user address
     /// @param oldTokenIds old tokenIds of the user
@@ -33,11 +30,6 @@ contract veMigrationDest is Ownable, ReentrancyGuard {
 
     modifier onlyExecutor() {
         require(msg.sender == anycallExecutor, "Only executor can call this function");
-        _;
-    }
-
-    modifier onlySelf() {
-        require(msg.sender == address(this), "Only this contract can call this function");
         _;
     }
 
@@ -76,7 +68,10 @@ contract veMigrationDest is Ownable, ReentrancyGuard {
     /// @return result return message
     function anyExecute(bytes calldata data) external onlyExecutor nonReentrant returns (bool success, bytes memory result) {
         (address callFrom, uint256 fromChainID, ) = IExecutor(anycallExecutor).context();
-        require(callFrom == sender && fromChainID == srcChainId, "Only sender on src chain can initiate the anyCall");
+        bool isValidSource = callFrom == sender && fromChainID == srcChainId;
+        if (!isValidSource) {
+            return (false, "invalid source");
+        }
         executeMigration(data);
         return (true, "");
     }
