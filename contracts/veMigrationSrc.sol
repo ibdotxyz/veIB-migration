@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
 import "./interfaces/IVotingEscrow.sol";
 import "./interfaces/IFeeDistributor.sol";
@@ -121,5 +122,14 @@ contract veMigrationSrc is Ownable {
         require(_initialCallTo == receiver, "Incorrect receiver address");
         (address user, uint256[] memory oldTokenIds, ) = abi.decode(_initialCallData, (address, uint256[], IVotingEscrow.LockedBalance[]));
         emit MigrationFailed(user, oldTokenIds);
+    }
+
+    function tokenIds(address user) external view returns (uint256[] memory) {
+        uint256 balance = IERC721Enumerable(veIB).balanceOf(user);
+        uint256[] memory ids = new uint256[](balance);
+        for (uint256 i = 0; i < balance; i++) {
+            ids[i] = IERC721Enumerable(veIB).tokenOfOwnerByIndex(user, i);
+        }
+        return ids;
     }
 }
