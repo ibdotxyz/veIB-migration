@@ -41,7 +41,7 @@ const config: HardhatUserConfig = {
     },
     veIB: {
       fantom: "0xBe33aD085e4a5559e964FA8790ceB83905062065",
-      optimism: "",
+      optimism: "0x707648dfbf9df6b0898f78edf191b85e327e0e05",
       ftmTest: "0xb3a24E68E30e23A6A4668Ea826C9308E5DE89cAf",
       rinkeby: "0x3490A922E31a00cCD016Db5a2e897E0A5514a218",
     },
