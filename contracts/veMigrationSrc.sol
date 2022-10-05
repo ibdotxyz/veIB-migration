@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
 import "./interfaces/IVotingEscrow.sol";
@@ -14,16 +15,14 @@ struct MigrationLock {
     uint256 duration;
 }
 
-contract veMigrationSrc is Ownable {
+contract veMigrationSrc is Ownable, ReentrancyGuard {
     address public immutable anycallExecutor;
     address public immutable anyCall;
     address public immutable veIB;
     address public immutable receiver;
     uint256 public immutable srcChainId;
     uint256 public immutable destChainId;
-
     address[] public feeDistributors;
-
     uint256 public constant PAY_FEE_ON_DEST_CHAIN = 0; // PAID_ON_DEST = 0; PAID_ON_SRC = 2;
     address public constant nullAddress = 0x000000000000000000000000000000000000dEaD;
     uint256 public constant WEEK = 1 weeks;
@@ -76,7 +75,7 @@ contract veMigrationSrc is Ownable {
     /// @notice function to initiate migration on source chain, it help users claim rewards from fee_distibutors
     ///         and then burn the veIB NFTs before initiating the anyCall to destination chain
     /// @param tokenIds array of tokenIds to migrate
-    function migrate(uint256[] calldata tokenIds) external {
+    function migrate(uint256[] calldata tokenIds) external nonReentrant {
         for (uint256 i = 0; i < feeDistributors.length; i++) {
             IFeeDistributor(feeDistributors[i]).claim_many(tokenIds);
         }
@@ -99,7 +98,7 @@ contract veMigrationSrc is Ownable {
     /// @param data abi encoded data of the anyCall
     /// @return success true if migration is successful
     /// @return result return message
-    function anyExecute(bytes calldata data) external onlyExecutor returns (bool success, bytes memory result) {
+    function anyExecute(bytes calldata data) external onlyExecutor nonReentrant returns (bool success, bytes memory result) {
         (address callFrom, uint256 fromChainID, ) = IExecutor(anycallExecutor).context();
         bool isValidSource = callFrom == address(this) && fromChainID == srcChainId;
         bool isValidFunctionSig = bytes4(data[:4]) == this.anyFallback.selector;

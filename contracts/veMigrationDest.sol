@@ -19,7 +19,6 @@ contract veMigrationDest is Ownable, ReentrancyGuard {
     address public immutable anyCall;
     address public immutable veIB;
     uint256 public immutable srcChainId;
-
     address public sender;
 
     /// @notice emitted when migration is successful on destination chain

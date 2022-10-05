@@ -6,7 +6,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { get, execute, read } = deployments;
   const { deployer, ibToken, veIB, anyCall } = await getNamedAccounts();
   // TODO: fill in below
-  const sender = "0xfB41A1247322E625A3563abF1D5AD6A62058cD05"; // veIbMigration on src chain;
+  const sender = ""; // veIbMigration on src chain;
   const prepaidFees = ethers.utils.parseEther("0.01");
   // END TODO
   let tx;
