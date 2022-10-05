@@ -7,8 +7,6 @@
     "format": "./tools/format",
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage --testfiles './test/*.ts'",
-    "testDeployOP": "TEST_FORK=optimism npx hardhat deploy --tags deploy-op --network hardhat",
-    "testDeployFTM": "TEST_FORK=fantom npx hardhat deploy --tags deploy-op --network hardhat",
     "checkFormat": "./tools/checkFormat",
     "typechain": "npx hardhat typechain"
   },
