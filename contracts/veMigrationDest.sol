@@ -82,7 +82,6 @@ contract veMigrationDest is Ownable, ReentrancyGuard {
         uint256[] memory newTokenIds = new uint256[](oldTokenIds.length);
         for (uint256 i = 0; i < migrationLocks.length; i++) {
             uint256 amount = migrationLocks[i].amount;
-            IERC20(ibToken).mint(address(this), amount);
             IERC20(ibToken).approve(veIB, amount);
             uint256 tokenId = IVotingEscrow(veIB).create_lock_for(amount, migrationLocks[i].duration, user);
             newTokenIds[i] = tokenId;
