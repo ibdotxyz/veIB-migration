@@ -94,7 +94,7 @@ contract veMigrationDest is Ownable, ReentrancyGuard {
     }
 
     /// @notice function to seize erc20 tokens from this contract by the owner
-    /// @param token  token address to be seizes
+    /// @param token  token address to be seized
     /// @param amount amount to be seized
     function seize(address token, uint256 amount) external onlyOwner {
         IERC20(token).safeTransfer(owner(), amount);
