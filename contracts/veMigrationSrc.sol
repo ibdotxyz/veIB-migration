@@ -18,9 +18,9 @@ contract veMigrationSrc is Ownable, ReentrancyGuard {
     address public immutable anycallExecutor;
     address public immutable anyCall;
     address public immutable veIB;
-    address public immutable receiver;
     uint256 public immutable srcChainId;
     uint256 public immutable destChainId;
+    address public receiver;
     address[] public feeDistributors;
     uint256 public constant PAY_FEE_ON_DEST_CHAIN = 0; // PAID_ON_DEST = 0; PAID_ON_SRC = 2;
     address public constant nullAddress = 0x000000000000000000000000000000000000dEaD;
@@ -126,5 +126,10 @@ contract veMigrationSrc is Ownable, ReentrancyGuard {
             ids[i] = IERC721Enumerable(veIB).tokenOfOwnerByIndex(user, i);
         }
         return ids;
+    }
+
+    function setReceiver(address _receiver) external onlyOwner {
+        require(_receiver != address(0), "receiver address cannot be 0");
+        receiver = _receiver;
     }
 }
