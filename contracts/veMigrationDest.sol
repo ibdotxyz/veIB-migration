@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IVotingEscrow.sol";
 import "./interfaces/IAnyCall.sol";
 import "./interfaces/IExecutor.sol";
-import "./interfaces/IERC20Mintable.sol";
 
 struct MigrationLock {
     uint256 amount;
