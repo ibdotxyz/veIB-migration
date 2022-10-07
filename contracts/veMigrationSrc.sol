@@ -8,7 +8,6 @@ import "./interfaces/IVotingEscrow.sol";
 import "./interfaces/IFeeDistributor.sol";
 import "./interfaces/IAnyCall.sol";
 import "./interfaces/IExecutor.sol";
-import "./interfaces/IERC20.sol";
 
 struct MigrationLock {
     uint256 amount;
