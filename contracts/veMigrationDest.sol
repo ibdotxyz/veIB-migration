@@ -2,11 +2,11 @@
 pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interfaces/IVotingEscrow.sol";
 import "./interfaces/IAnyCall.sol";
 import "./interfaces/IExecutor.sol";
-import "./interfaces/IERC20.sol";
 
 struct MigrationLock {
     uint256 amount;
@@ -14,12 +14,14 @@ struct MigrationLock {
 }
 
 contract veMigrationDest is Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
     address public immutable ibToken;
     address public immutable anycallExecutor;
     address public immutable anyCall;
     address public immutable veIB;
     uint256 public immutable srcChainId;
     address public sender;
+    mapping(uint256 => bool) public tokenIdMigrated;
 
     /// @notice emitted when migration is successful on destination chain
     /// @param user user address
@@ -81,12 +83,20 @@ contract veMigrationDest is Ownable, ReentrancyGuard {
         (address user, uint256[] memory oldTokenIds, MigrationLock[] memory migrationLocks) = abi.decode(data, (address, uint256[], MigrationLock[]));
         uint256[] memory newTokenIds = new uint256[](oldTokenIds.length);
         for (uint256 i = 0; i < migrationLocks.length; i++) {
+            require(!tokenIdMigrated[oldTokenIds[i]], "tokenId already migrated");
+            tokenIdMigrated[oldTokenIds[i]] = true;
             uint256 amount = migrationLocks[i].amount;
-            IERC20(ibToken).mint(address(this), amount);
             IERC20(ibToken).approve(veIB, amount);
             uint256 tokenId = IVotingEscrow(veIB).create_lock_for(amount, migrationLocks[i].duration, user);
             newTokenIds[i] = tokenId;
         }
         emit MigrationCompleted(user, oldTokenIds, newTokenIds);
+    }
+
+    /// @notice function to seize erc20 tokens from this contract by the owner
+    /// @param token  token address to be seized
+    /// @param amount amount to be seized
+    function seize(address token, uint256 amount) external onlyOwner {
+        IERC20(token).safeTransfer(owner(), amount);
     }
 }
